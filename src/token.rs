@@ -1,6 +1,10 @@
-use crate::pos::Span;
+use enum_kinds::EnumKind;
+use enum_map::Enum;
 
-#[derive(Debug, Clone)]
+use crate::pos::Spanned;
+
+#[derive(Debug, Clone, EnumKind)]
+#[enum_kind(TokenKind, derive(Enum))]
 pub enum TokenData {
     // Values
     String(String),
@@ -52,6 +56,9 @@ pub enum TokenData {
     KwDo,
     KwOf,
     KwNil,
+
+    // etc.
+    Eof,
 }
 
 impl TokenData {
@@ -105,8 +112,4 @@ impl TokenData {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Token {
-    pub data: TokenData,
-    pub span: Span,
-}
+pub type Token = Spanned<TokenData>;

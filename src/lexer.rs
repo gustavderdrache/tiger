@@ -8,7 +8,7 @@ use crate::{
     token::{Token, TokenData},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LexError {
     IntegerRangeError(Position, <isize as FromStr>::Err),
     IllegalCharacter(Position, char),
@@ -271,23 +271,25 @@ impl<'a> Lexer<'a> {
             },
         }
     }
-}
 
-impl<'a> Iterator for Lexer<'a> {
-    type Item = Result<Token, LexError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Err(e) = self.skip_whitespace() {
-            return Some(Err(e));
-        }
+    fn scan(&mut self) -> Result<Token, LexError> {
+        let _ = self.skip_whitespace()?;
 
         let start = self.current_position();
-        let current = self.current_char()?;
+        let current = match self.current_char() {
+            Some(ch) => ch,
+            None => {
+                return Ok(Token {
+                    data: TokenData::Eof,
+                    span: Span { start, end: start },
+                })
+            }
+        };
 
         if let Some(data) = TokenData::from_single_char(current) {
             self.advance();
 
-            return Some(Ok(self.create_token(data, start)));
+            return Ok(self.create_token(data, start));
         }
 
         match current {
@@ -297,10 +299,10 @@ impl<'a> Iterator for Lexer<'a> {
                 match self.current_char() {
                     Some('=') => {
                         self.advance();
-                        return Some(Ok(self.create_token(TokenData::ColonEquals, start)));
+                        return Ok(self.create_token(TokenData::ColonEquals, start));
                     }
 
-                    _ => return Some(Ok(self.create_token(TokenData::Colon, start))),
+                    _ => return Ok(self.create_token(TokenData::Colon, start)),
                 }
             }
 
@@ -309,15 +311,15 @@ impl<'a> Iterator for Lexer<'a> {
                 match self.current_char() {
                     Some('=') => {
                         self.advance();
-                        return Some(Ok(self.create_token(TokenData::LessThanEquals, start)));
+                        return Ok(self.create_token(TokenData::LessThanEquals, start));
                     }
 
                     Some('>') => {
                         self.advance();
-                        return Some(Ok(self.create_token(TokenData::NotEquals, start)));
+                        return Ok(self.create_token(TokenData::NotEquals, start));
                     }
 
-                    _ => return Some(Ok(self.create_token(TokenData::LessThan, start))),
+                    _ => return Ok(self.create_token(TokenData::LessThan, start)),
                 }
             }
 
@@ -326,10 +328,10 @@ impl<'a> Iterator for Lexer<'a> {
                 match self.current_char() {
                     Some('=') => {
                         self.advance();
-                        return Some(Ok(self.create_token(TokenData::GreaterThanEquals, start)));
+                        return Ok(self.create_token(TokenData::GreaterThanEquals, start));
                     }
 
-                    _ => return Some(Ok(self.create_token(TokenData::GreaterThan, start))),
+                    _ => return Ok(self.create_token(TokenData::GreaterThan, start)),
                 }
             }
 
@@ -337,10 +339,10 @@ impl<'a> Iterator for Lexer<'a> {
         }
 
         if current == '"' {
-            return Some(match self.scan_string() {
+            return match self.scan_string() {
                 Ok(buffer) => Ok(self.create_token(TokenData::String(buffer), start)),
                 Err(err) => Err(err),
-            });
+            };
         }
 
         if current.is_ascii_alphabetic() {
@@ -348,21 +350,27 @@ impl<'a> Iterator for Lexer<'a> {
                 .advance_while(|ch| ch.is_ascii_alphanumeric())
                 .to_owned();
 
-            return Some(Ok(
-                self.create_token(TokenData::from_string(ident_or_keyword), start)
-            ));
+            return Ok(self.create_token(TokenData::from_string(ident_or_keyword), start));
         }
 
         if current.is_ascii_digit() {
             let number = self.advance_while(|ch| ch.is_ascii_digit());
 
-            return Some(match number.parse() {
+            return match number.parse() {
                 Ok(parsed) => Ok(self.create_token(TokenData::Integer(parsed), start)),
                 Err(err) => Err(LexError::IntegerRangeError(start, err)),
-            });
+            };
         }
 
         self.advance();
-        Some(Err(LexError::IllegalCharacter(start, current)))
+        Err(LexError::IllegalCharacter(start, current))
+    }
+}
+
+impl<'a> Iterator for Lexer<'a> {
+    type Item = Result<Token, LexError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.scan())
     }
 }

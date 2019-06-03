@@ -1,38 +1,33 @@
-#![deny(missing_debug_implementations)]
+#![deny(missing_debug_implementations, future_incompatible)]
 #![warn(missing_copy_implementations)]
 
+mod expression;
 mod lexer;
+mod parser;
 mod pos;
 mod token;
 
 fn main() {
     env_logger::init();
 
-    let input = r#"
-        let x: string = "hello, world";
-        let y: string = "this string has \"quotes\"";
-        let z = "listicles:\n\t1. they suck";
-        let z2 = "vim? is that you?\^J\^I-> yes";
+    let inputs = &[
+        "42",
+        "nil",
+        "break",
+        r#""hello, world""#,
+        "-42",
+        "-nil",
+        "-break",
+        r#"-"hello, world""#,
+        "(42)",
+        "(nil)",
+        "(break)",
+        "(nil; break; 42; -37; -(1; 2))"
+    ];
 
-        let w = "\65-1 steak sauce";
+    for input in inputs {
+        let mut parser = parser::Parser::new(input);
 
-        // "\666"
-        "\^J"
-        "\n"
-        "\t"
-    "#;
-
-    let lexer = lexer::Lexer::new(input);
-
-    for tok in lexer {
-        if let Ok(tok) = &tok {
-            let start = tok.span.start.offset;
-            let end = tok.span.end.offset;
-
-            let original = &input[start..end];
-            print!("{:?} ", original);
-        }
-
-        println!("{:?}", tok);
+        println!("{}\n  {:#?}", input, parser.parse())
     }
 }
