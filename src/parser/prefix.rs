@@ -200,7 +200,7 @@ fn parse_record_subscript(parser: &mut Parser) -> Result<Subscript, ParseError> 
 
     let value = match subscript_token.data {
         TokenData::Identifier(ident) => ident,
-        _ => panic!("Unexpected token data {:?} in parse_record_subscript()"),
+        _ => panic!("Unexpected token data {:?} in parse_record_subscript()", subscript_token),
     };
 
     let data = SubscriptData::Record(value);

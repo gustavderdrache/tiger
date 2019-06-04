@@ -273,7 +273,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn scan(&mut self) -> Result<Token, LexError> {
-        let _ = self.skip_whitespace()?;
+        self.skip_whitespace()?;
 
         let start = self.current_position();
         let current = match self.current_char() {
