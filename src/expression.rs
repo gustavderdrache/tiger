@@ -72,8 +72,8 @@ pub type Subscript = Spanned<SubscriptData>;
 
 #[derive(Debug, Clone)]
 pub struct LvalueData {
-    name: String,
-    subscripts: Vec<Subscript>,
+    pub name: String,
+    pub subscripts: Vec<Subscript>,
 }
 
 pub type Lvalue = Spanned<LvalueData>;

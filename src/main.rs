@@ -22,12 +22,21 @@ fn main() {
         "(42)",
         "(nil)",
         "(break)",
-        "(nil; break; 42; -37; -(1; 2))"
+        "(nil; break; 42; -37; -(1; 2))",
+        r#"for x := 1 to 2 do "oops""#,
+        r#"while "lol" do "fart""#,
+        "foo()",
+        "bar(1)",
+        "baz(1, 2)",
+        "quux(f(), g(), h())",
+        "foo.bar[baz]",
+        "xyz[42] of 33",
+        "xyz[42].foo",
     ];
 
     for input in inputs {
         let mut parser = parser::Parser::new(input);
 
-        println!("{}\n  {:#?}", input, parser.parse())
+        println!("{}\n  {:#?}", input, parser.parse_program())
     }
 }

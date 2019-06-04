@@ -86,13 +86,14 @@ impl<'a> Parser<'a> {
         let tok = self.current.clone()?;
 
         if pattern.matches(tok.kind()) {
+            let _ = self.advance()?;
             Ok(tok.clone())
         } else {
             Err(ParseError::UnexpectedToken(tok.clone()))
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expression, ParseError> {
+    pub fn parse_expression(&mut self) -> Result<Expression, ParseError> {
         let tok = self.current.clone()?;
 
         let parser = match self.prefix_parsers[tok.kind()] {
@@ -102,5 +103,11 @@ impl<'a> Parser<'a> {
 
         let _ = self.advance();
         parser(self, &tok)
+    }
+
+    pub fn parse_program(&mut self) -> Result<Expression, ParseError> {
+        let expr = self.parse_expression()?;
+        let _ = self.expect(TokenKind::Eof)?;
+        Ok(expr)
     }
 }
