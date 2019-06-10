@@ -12,25 +12,35 @@ pub enum TypeData {
 pub type Type = Spanned<TypeData>;
 
 #[derive(Debug, Clone)]
+pub struct TypeDeclData {
+    pub name: String,
+    pub decl: Type,
+}
+
+pub type TypeDecl = Spanned<TypeDeclData>;
+
+#[derive(Debug, Clone)]
 pub struct VariableData {
-    name: String,
-    ty_dec: Option<String>,
+    pub name: String,
+    pub ty_dec: Option<String>,
+    pub init: Expression,
 }
 
 pub type Variable = Spanned<VariableData>;
 
 #[derive(Debug, Clone)]
 pub struct FunctionData {
-    name: String,
-    fields: IndexMap<String, String>,
-    ret_type: Option<String>,
+    pub name: String,
+    pub fields: IndexMap<String, Spanned<String>>,
+    pub ret_type: Option<String>,
+    pub body: Expression,
 }
 
 pub type Function = Spanned<FunctionData>;
 
 #[derive(Debug, Clone)]
 pub enum DeclarationData {
-    Type(Vec<Type>),
+    Type(Vec<TypeDecl>),
     Variable(Variable),
     Function(Vec<Function>),
 }
@@ -92,6 +102,10 @@ pub enum ExpressionData {
         name: String,
         size: Box<Expression>,
         init: Box<Expression>,
+    },
+    Record {
+        name: String,
+        fields: IndexMap<String, Expression>,
     },
     BinaryOperation {
         op: BinaryOperator,

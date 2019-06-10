@@ -24,6 +24,14 @@ fn is_safe_control_char(ch: char) -> bool {
     ch == '@' || ch == '[' || ch == ']' || ch == '?' || ch == '_' || ch.is_ascii_alphabetic()
 }
 
+fn is_id_start(ch: char) -> bool {
+    ch == '_' || ch.is_ascii_alphabetic()
+}
+
+fn is_id_cont(ch: char) -> bool {
+    ch == '_' || ch.is_ascii_alphanumeric()
+}
+
 #[derive(Debug)]
 pub struct Lexer<'a> {
     input: &'a str,
@@ -345,9 +353,9 @@ impl<'a> Lexer<'a> {
             };
         }
 
-        if current.is_ascii_alphabetic() {
+        if is_id_start(current) {
             let ident_or_keyword = self
-                .advance_while(|ch| ch.is_ascii_alphanumeric())
+                .advance_while(is_id_cont)
                 .to_owned();
 
             return Ok(self.create_token(TokenData::from_string(ident_or_keyword), start));

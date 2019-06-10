@@ -6,9 +6,9 @@ use crate::{
     expression::*,
     lexer::{LexError, Lexer},
     token::{Token, TokenKind},
+    pos::Span,
 };
 
-mod infix;
 mod prefix;
 
 use prefix::prefix_token_map;
@@ -18,6 +18,8 @@ pub use prefix::PrefixParser;
 pub enum ParseError {
     LexicalError(LexError),
     UnexpectedToken(Token),
+    DuplicateArgument(String, Span),
+    DuplicateField(String, Span),
 }
 
 impl From<LexError> for ParseError {
@@ -67,6 +69,14 @@ impl<'a> Parser<'a> {
 
     pub fn peek_token(&mut self) -> Result<Token, ParseError> {
         self.lexer.peek().cloned().unwrap().map_err(Into::into)
+    }
+
+    pub fn current(&self) -> Result<Token, ParseError> {
+        self.current.clone()
+    }
+
+    pub fn current_span(&self) -> Result<Span, ParseError> {
+        self.current().map(|token| token.span)
     }
 
     pub fn matches<P>(&mut self, pattern: P) -> bool
