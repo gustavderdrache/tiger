@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "tiger_syntax"
+    "tiger_syntax",
+    "tigc"
 ]

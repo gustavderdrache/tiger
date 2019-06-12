@@ -235,6 +235,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "tigc"
+version = "0.1.0"
+dependencies = [
+ "tiger_syntax 0.1.0",
+]
+
+[[package]]
 name = "tiger_syntax"
 version = "0.1.0"
 dependencies = [
