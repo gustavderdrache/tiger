@@ -65,7 +65,7 @@ pub enum BinaryOperatorData {
 
 pub type BinaryOperator = Spanned<BinaryOperatorData>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum UnaryOperatorData {
     Negate,
 }

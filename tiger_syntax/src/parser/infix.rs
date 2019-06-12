@@ -8,15 +8,15 @@ use crate::{
 use super::{Associativity, ParseError, Parser, Precedence};
 
 #[derive(Debug, Clone, Copy)]
-pub struct InfixParser {
-    pub operator: BinaryOperatorData,
-    pub precedence: Precedence,
-    pub associativity: Associativity,
+pub(crate) struct InfixParser {
+    pub(crate) operator: BinaryOperatorData,
+    pub(crate) precedence: Precedence,
+    pub(crate) associativity: Associativity,
 }
 
 impl InfixParser {
-    pub fn parse(
-        &self,
+    pub(crate) fn parse(
+        self,
         parser: &mut Parser,
         lhs: Expression,
         token: &Token,
@@ -37,7 +37,7 @@ impl InfixParser {
     }
 }
 
-pub fn infix_token_map() -> EnumMap<TokenKind, Option<InfixParser>> {
+pub(crate) fn infix_token_map() -> EnumMap<TokenKind, Option<InfixParser>> {
     let mut map = EnumMap::default();
 
     macro_rules! op {

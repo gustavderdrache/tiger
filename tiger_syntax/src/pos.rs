@@ -29,7 +29,10 @@ pub struct Spanned<T> {
 }
 
 impl<T> Spanned<T> {
-    pub fn kind<'a, K>(&'a self) -> K where &'a T: Into<K> {
+    pub fn kind<'a, K>(&'a self) -> K
+    where
+        &'a T: Into<K>,
+    {
         (&self.data).into()
     }
 }

@@ -33,7 +33,7 @@ fn is_id_cont(ch: char) -> bool {
 }
 
 #[derive(Debug)]
-pub struct Lexer<'a> {
+pub(crate) struct Lexer<'a> {
     input: &'a str,
     iter: Peekable<CharIndices<'a>>,
     position: usize,
@@ -43,7 +43,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(input: &'a str) -> Self {
+    pub(crate) fn new(input: &'a str) -> Self {
         let mut iter = input.char_indices().peekable();
         let current = iter.next();
 
@@ -354,9 +354,7 @@ impl<'a> Lexer<'a> {
         }
 
         if is_id_start(current) {
-            let ident_or_keyword = self
-                .advance_while(is_id_cont)
-                .to_owned();
+            let ident_or_keyword = self.advance_while(is_id_cont).to_owned();
 
             return Ok(self.create_token(TokenData::from_string(ident_or_keyword), start));
         }

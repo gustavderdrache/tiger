@@ -235,7 +235,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tigc"
+name = "tiger_syntax"
 version = "0.1.0"
 dependencies = [
  "enum-kinds 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",

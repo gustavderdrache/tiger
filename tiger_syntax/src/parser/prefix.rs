@@ -11,7 +11,7 @@ use super::{ParseError, Parser, Precedence};
 
 type ParserFunction<T> = fn(&mut Parser, &Token) -> Result<T, ParseError>;
 
-pub type PrefixParser = ParserFunction<Expression>;
+pub(crate) type PrefixParser = ParserFunction<Expression>;
 
 const PARSE_NEGATION: PrefixParser = |parser, tok| {
     let expr = parser.parse_expression(Precedence::None)?;
@@ -695,7 +695,7 @@ const PARSE_IF: PrefixParser = |parser, token| {
     Ok(Expression { data, span })
 };
 
-pub fn prefix_token_map() -> EnumMap<TokenKind, Option<PrefixParser>> {
+pub(crate) fn prefix_token_map() -> EnumMap<TokenKind, Option<PrefixParser>> {
     let mut map = EnumMap::default();
 
     map[TokenKind::Minus] = Some(PARSE_NEGATION);

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt;
 
 use enum_map::EnumMap;
 
@@ -12,10 +12,8 @@ use crate::{
 mod infix;
 mod prefix;
 
-use infix::infix_token_map;
-use prefix::prefix_token_map;
-pub use prefix::PrefixParser;
-pub use infix::InfixParser;
+use infix::{infix_token_map, InfixParser};
+use prefix::{prefix_token_map, PrefixParser};
 
 #[derive(Debug, Clone)]
 pub enum ParseError {
@@ -31,7 +29,7 @@ impl From<LexError> for ParseError {
     }
 }
 
-pub trait TokenPattern: Debug {
+pub(crate) trait TokenPattern: fmt::Debug {
     fn matches(self, token: TokenKind) -> bool;
 }
 
@@ -48,7 +46,7 @@ impl<'a> TokenPattern for &'a [TokenKind] {
 }
 
 #[derive(Debug, PartialOrd, Ord, Eq, PartialEq, Clone, Copy)]
-pub enum Precedence {
+pub(crate) enum Precedence {
     None,
 
     // Operators
@@ -60,7 +58,7 @@ pub enum Precedence {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum Associativity {
+pub(crate) enum Associativity {
     None,
     Left,
 }
@@ -70,6 +68,15 @@ pub struct Parser<'a> {
     infix_parsers: EnumMap<TokenKind, Option<InfixParser>>,
     prefix_parsers: EnumMap<TokenKind, Option<PrefixParser>>,
     current: Result<Token, ParseError>,
+}
+
+impl<'a> fmt::Debug for Parser<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Parser")
+            .field("lexer", &self.lexer)
+            .field("current", &self.current)
+            .finish()
+    }
 }
 
 impl<'a> Parser<'a> {
@@ -85,7 +92,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn advance(&mut self) -> Result<Token, ParseError> {
+    pub(crate) fn advance(&mut self) -> Result<Token, ParseError> {
         self.current = self.lexer.next().unwrap().map_err(Into::into);
         self.current.clone()
     }
@@ -106,7 +113,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn matches<P>(&mut self, pattern: P) -> bool
+    pub(crate) fn matches<P>(&mut self, pattern: P) -> bool
     where
         P: TokenPattern,
     {
@@ -116,7 +123,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn expect<P>(&mut self, pattern: P) -> Result<Token, ParseError>
+    pub(crate) fn expect<P>(&mut self, pattern: P) -> Result<Token, ParseError>
     where
         P: TokenPattern,
     {
@@ -130,7 +137,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
+    pub(crate) fn parse_expression(
+        &mut self,
+        precedence: Precedence,
+    ) -> Result<Expression, ParseError> {
         let tok = self.current()?;
 
         let parser = match self.prefix_parsers[tok.kind()] {

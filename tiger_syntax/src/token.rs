@@ -112,4 +112,4 @@ impl TokenData {
     }
 }
 
-pub type Token = Spanned<TokenData>;
+pub(crate) type Token = Spanned<TokenData>;
