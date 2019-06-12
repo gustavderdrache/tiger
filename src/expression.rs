@@ -47,7 +47,7 @@ pub enum DeclarationData {
 
 pub type Declaration = Spanned<DeclarationData>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum BinaryOperatorData {
     Multiply,
     Divide,
@@ -57,8 +57,8 @@ pub enum BinaryOperatorData {
     NotEqual,
     Greater,
     GreaterEqual,
-    LessThan,
-    LessThanEqual,
+    Less,
+    LessEqual,
     And,
     Or,
 }
@@ -98,6 +98,7 @@ pub enum ExpressionData {
     Let(Vec<Declaration>, Vec<Expression>),
     Sequence(Vec<Expression>),
     FunctionCall(String, Vec<Expression>),
+    Assign(Lvalue, Box<Expression>),
     Array {
         name: String,
         size: Box<Expression>,

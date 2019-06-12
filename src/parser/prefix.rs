@@ -7,14 +7,14 @@ use crate::{
     token::{Token, TokenData, TokenKind},
 };
 
-use super::{ParseError, Parser};
+use super::{ParseError, Parser, Precedence};
 
 type ParserFunction<T> = fn(&mut Parser, &Token) -> Result<T, ParseError>;
 
 pub type PrefixParser = ParserFunction<Expression>;
 
 const PARSE_NEGATION: PrefixParser = |parser, tok| {
-    let expr = parser.parse_expression()?;
+    let expr = parser.parse_expression(Precedence::None)?;
     let span = tok.span.extend(expr.span);
 
     let data = ExpressionData::UnaryOperation(
@@ -82,7 +82,7 @@ const PARSE_PARENS: PrefixParser = |parser, tok| {
     let mut expressions = Vec::new();
 
     loop {
-        let expression = parser.parse_expression()?;
+        let expression = parser.parse_expression(Precedence::None)?;
         expressions.push(expression);
 
         if !parser.matches(TokenKind::Semicolon) {
@@ -105,9 +105,9 @@ const PARSE_PARENS: PrefixParser = |parser, tok| {
 };
 
 const PARSE_WHILE: PrefixParser = |parser, start_token| {
-    let predicate = parser.parse_expression()?;
+    let predicate = parser.parse_expression(Precedence::None)?;
     parser.expect(TokenKind::KwDo)?;
-    let body = parser.parse_expression()?;
+    let body = parser.parse_expression(Precedence::None)?;
 
     let end_span = body.span;
 
@@ -131,15 +131,15 @@ const PARSE_FOR: PrefixParser = |parser, start_token| {
 
     parser.expect(TokenKind::ColonEquals)?;
 
-    let start_expr = parser.parse_expression()?;
+    let start_expr = parser.parse_expression(Precedence::None)?;
 
     parser.expect(TokenKind::KwTo)?;
 
-    let end_expr = parser.parse_expression()?;
+    let end_expr = parser.parse_expression(Precedence::None)?;
 
     parser.expect(TokenKind::KwDo)?;
 
-    let body = parser.parse_expression()?;
+    let body = parser.parse_expression(Precedence::None)?;
 
     let end_span = body.span;
 
@@ -170,7 +170,7 @@ fn parse_function_list(
             break;
         }
 
-        let arg = parser.parse_expression()?;
+        let arg = parser.parse_expression(Precedence::None)?;
         args.push(arg);
 
         if parser.matches(TokenKind::Comma) {
@@ -211,7 +211,7 @@ fn parse_record_subscript(parser: &mut Parser) -> Result<Subscript, ParseError> 
 
 fn parse_array_subscript(parser: &mut Parser) -> Result<Subscript, ParseError> {
     let start_span = parser.expect(TokenKind::OpenBrack)?.span;
-    let subscript = parser.parse_expression()?;
+    let subscript = parser.parse_expression(Precedence::None)?;
     let end_span = parser.expect(TokenKind::CloseBrack)?.span;
 
     let data = SubscriptData::Array(subscript);
@@ -253,7 +253,12 @@ fn parse_subscripts(
         name: ident,
         subscripts,
     };
+
     let lvalue = Lvalue { data, span };
+
+    if parser.matches(TokenKind::ColonEquals) {
+        return parse_assignment(parser, lvalue);
+    }
 
     let data = ExpressionData::Lvalue(lvalue);
     Ok(Expression { data, span })
@@ -265,13 +270,13 @@ fn parse_array_or_subscript(
     start_span: Span,
 ) -> Result<Expression, ParseError> {
     let subscript_start = parser.expect(TokenKind::OpenBrack)?.span;
-    let subscript_or_size = parser.parse_expression()?;
+    let subscript_or_size = parser.parse_expression(Precedence::None)?;
     let subscript_end = parser.expect(TokenKind::CloseBrack)?.span;
 
     if parser.matches(TokenKind::KwOf) {
         parser.expect(TokenKind::KwOf)?;
 
-        let init = parser.parse_expression()?;
+        let init = parser.parse_expression(Precedence::None)?;
         let end_span = init.span;
 
         let data = ExpressionData::Array {
@@ -312,7 +317,7 @@ fn parse_record_init(
 
             parser.expect(TokenKind::Colon)?;
 
-            let init = parser.parse_expression()?;
+            let init = parser.parse_expression(Precedence::None)?;
             fields.insert(field_name, init);
 
             if parser.matches(TokenKind::CloseBrace) {
@@ -331,6 +336,15 @@ fn parse_record_init(
     };
     let span = start_span.extend(end_span);
 
+    Ok(Expression { data, span })
+}
+
+fn parse_assignment(parser: &mut Parser, lvalue: Lvalue) -> Result<Expression, ParseError> {
+    parser.expect(TokenKind::ColonEquals)?;
+
+    let value = parser.parse_expression(Precedence::None)?;
+    let span = lvalue.span.extend(value.span);
+    let data = ExpressionData::Assign(lvalue, value.into());
     Ok(Expression { data, span })
 }
 
@@ -364,6 +378,10 @@ const PARSE_IDENTIFIER: PrefixParser = |parser, token| {
         data: lvalue_data,
         span: token.span,
     };
+
+    if parser.matches(TokenKind::ColonEquals) {
+        return parse_assignment(parser, lvalue);
+    }
 
     let data = ExpressionData::Lvalue(lvalue);
     Ok(Expression {
@@ -400,7 +418,7 @@ const PARSE_VAR_DECL: DeclarationParser = |parser, token| {
 
     parser.expect(TokenKind::ColonEquals)?;
 
-    let init = parser.parse_expression()?;
+    let init = parser.parse_expression(Precedence::None)?;
 
     let span = token.span.extend(init.span);
     let data = DeclarationData::Variable(Variable {
@@ -568,7 +586,7 @@ const PARSE_FUNC_DECL: DeclarationParser = |parser, token| {
 
         parser.expect(TokenKind::Equals)?;
 
-        let body = parser.parse_expression()?;
+        let body = parser.parse_expression(Precedence::None)?;
         current_end_span = body.span;
 
         let span = current_start_span.extend(body.span);
@@ -629,7 +647,7 @@ const PARSE_LET_IN: PrefixParser = |parser, token| {
 
     if !parser.matches(TokenKind::KwEnd) {
         loop {
-            body.push(parser.parse_expression()?);
+            body.push(parser.parse_expression(Precedence::None)?);
             if parser.matches(TokenKind::Semicolon) {
                 parser.expect(TokenKind::Semicolon)?;
                 continue;
@@ -649,15 +667,15 @@ const PARSE_LET_IN: PrefixParser = |parser, token| {
 };
 
 const PARSE_IF: PrefixParser = |parser, token| {
-    let predicate = parser.parse_expression()?;
+    let predicate = parser.parse_expression(Precedence::None)?;
 
     parser.expect(TokenKind::KwThen)?;
 
-    let consequent = parser.parse_expression()?;
+    let consequent = parser.parse_expression(Precedence::None)?;
 
     let alternative = if parser.matches(TokenKind::KwElse) {
         parser.expect(TokenKind::KwElse)?;
-        let alternative = parser.parse_expression()?;
+        let alternative = parser.parse_expression(Precedence::None)?;
         Some(Box::new(alternative))
     } else {
         None
